@@ -1,0 +1,122 @@
+<?php
+
+namespace App\Http\Controllers\{{ namespace }};
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\{{ model }}\{{ model }}Request;
+use App\Http\Resources\{{ namespace }}\{{ model }}Resource;
+use App\Models\{{ model }};
+use Facades\App\Http\Repositories\{{ model }}Repository;
+use Illuminate\Support\Facades\Cache;
+use Inertia\Inertia;
+
+class {{ model }}Controller extends Controller
+{
+    public function index()
+    {
+        $items = {{ model }}Repository::paginate(20);
+
+        return Inertia::render(strtolower('{{ model }}').'/index', [
+            '{{ model | lowerPlural }}' => {{ model }}Resource::collection($items),
+            'title' => request('trash') ? 'Trash' : '{{ model }}',
+            'trash' => request('trash') ? true : false,
+            'request' => request()->all(),
+            'breadcumb' => [
+                ['text' => 'Dashboard', 'url' => route('dashboard.index')],
+                ['text' => '{{ model }}', 'url' => route(strtolower('{{ model }}').'.index')],
+            ],
+        ]);
+    }
+
+    public function create()
+    {
+        $item = new {{ model }}();
+        $item = {{ model }}Resource::make($item)->resolve();
+
+        return Inertia::render(strtolower('{{ model }}').'/form', [
+            'method' => 'post',
+            '{{ model | lower }}' => $item,
+            'title' => 'Create {{ model }}',
+            'breadcumb' => [
+                ['text' => 'Dashboard', 'url' => route('dashboard.index')],
+                ['text' => '{{ model }}', 'url' => route(strtolower('{{ model }}').'.index')],
+            ],
+        ]);
+    }
+
+    public function store({{ model }}Request $request)
+    {
+        $item = {{ model }}::create($request->all());
+        Cache::tags(['{{ model | lowerPlural }}'])->flush();
+
+        return redirect()->back()->with('message', toTitle($item->title).' has been created');
+    }
+
+    public function edit({{ model }} ${{ model | lower }})
+    {
+        return Inertia::render(strtolower('{{ model }}').'/form', [
+            '{{ model | lower }}' => {{ model }}Resource::make(${{ model | lower }})->resolve(),
+            'method' => 'patch',
+            'title' => 'Edit {{ model }}',
+            'breadcumb' => [
+                ['text' => 'Dashboard', 'url' => route('dashboard.index')],
+                ['text' => '{{ model }}', 'url' => route(strtolower('{{ model }}').'.index')],
+            ],
+        ]);
+    }
+
+    public function update({{ model }}Request $request, {{ model }} ${{ model | lower }})
+    {
+        ${{ model | lower }}->update($request->all());
+        Cache::tags(['{{ model | lowerPlural }}'])->flush();
+
+        return redirect()->back()->with('message', toTitle(${{ model | lower }}->title).' has been updated');
+    }
+
+    public function delete($id)
+    {
+        $item = {{ model }}::find($id);
+        if (! $item) abort(404);
+        $item->delete();
+
+        Cache::tags(['{{ model | lowerPlural }}'])->flush();
+
+        return redirect()->route(strtolower('{{ model }}').'.index')->with('message', toTitle($item->title).' has been deleted');
+    }
+
+    public function destroy($id)
+    {
+        $item = {{ model }}::withTrashed()->find($id);
+        if (! $item) abort(404);
+        $item->forceDelete();
+
+        Cache::tags(['{{ model | lowerPlural }}'])->flush();
+
+        return redirect()->route(strtolower('{{ model }}').'.index')->with('message', toTitle($item->title).' has been destroyed');
+    }
+
+    public function destroyAll()
+    {
+        $ids = explode(',', request('selected'));
+        $items = {{ model }}::whereIn('_id', $ids)->withTrashed()->get();
+
+        foreach ($items as $item) {
+            $item->forceDelete();
+        }
+
+        Cache::tags(['{{ model | lowerPlural }}'])->flush();
+
+        return redirect()->route(strtolower('{{ model }}').'.index')->with('message', 'Selected {{ model | lowerPlural }} have been destroyed');
+    }
+
+    public function restore($id)
+    {
+        $item = {{ model }}::withTrashed()->find($id);
+        if (! $item) abort(404);
+        $item->restore();
+
+        Cache::tags(['{{ model | lowerPlural }}'])->flush();
+
+        return redirect()->route(strtolower('{{ model }}').'.index')->with('message', toTitle($item->title).' has been restored');
+    }
+}
