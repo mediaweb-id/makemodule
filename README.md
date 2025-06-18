@@ -23,37 +23,10 @@ You can install the package via composer:
 composer require mediawebid/makemodule
 ```
 
-You can publish and run the migrations with:
+How to use
 
 ```bash
-php artisan vendor:publish --tag="makemodule-migrations"
-php artisan migrate
-```
-
-You can publish the config file with:
-
-```bash
-php artisan vendor:publish --tag="makemodule-config"
-```
-
-This is the contents of the published config file:
-
-```php
-return [
-];
-```
-
-Optionally, you can publish the views using
-
-```bash
-php artisan vendor:publish --tag="makemodule-views"
-```
-
-## Usage
-
-```php
-$makeModule = new MediaWebId\MakeModule();
-echo $makeModule->echoPhrase('Hello, MediaWebId!');
+php artisan make:module ModuleName --repository --request --resource --backend --frontend  --controller
 ```
 
 ## Testing
